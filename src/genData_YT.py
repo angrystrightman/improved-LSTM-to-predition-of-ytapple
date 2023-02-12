@@ -1,25 +1,31 @@
-import re
+import os,re
 import xlrd
 import pandas as pd
 import numpy  as np
 
 validData = lambda value: value if type(value) == type(float(1.0)) else 0
 
-saveLoc  = '..\\data\\prodData_YT.csv'  # 设置：存储路径
-dataPath = '..\\data\\prodRaw\\'        # 设置：数据路径
-fileList = [dataPath+str(i)+'.xls' for i in range(2003, 2023)]
+saveLoc   = '../data/prodData_YT.csv'  # 设置：存储路径
+dataPath  = '../data/prodRaw/'        # 设置：数据路径
+print(os.listdir(dataPath))
+fileList  = [i for i in os.listdir(dataPath) if 'xls' in i]
 
-dataKeys = ['Name', 'Time', 'Prod', 'Area', 'AverProd']
-data     = pd.DataFrame(columns=dataKeys)
-dataDict = dict.fromkeys(dataKeys, np.nan)
-count    = 0
-pattern  = re.compile('.*(县|区).*果品.*')
+dataKeys  = ['Name', 'Time', 'Prod', 'Area', 'AverProd']
+data      = pd.DataFrame(columns=dataKeys)
+dataDict  = dict.fromkeys(dataKeys, np.nan)
+count     = 0
+pattern   = re.compile('.*(县|区).*果品.*')
 
 areaNameListRaw = []
 areaNameList    = []
+print('Fetch name...')
 # 只选取重复数据，方便使用
 for f in fileList:
-    book    = xlrd.open_workbook(f)
+    try:
+        book = xlrd.open_workbook(dataPath+f)
+    except:
+        print("Error when reading: {}".format(f))
+        continue
     tNames  = book.sheet_names()
     tarName = ''
     for name in tNames:
@@ -28,6 +34,8 @@ for f in fileList:
             break
     if tarName != '':
         table = book.sheet_by_name(tarName)
+    elif len(book.sheet_names()) == 1:
+        table = book.book.sheets()[0]
     else:
         continue
     for name in table.col_values(0)[7:]:
@@ -43,10 +51,15 @@ for i in areaNameList:
     print(i, end=' ')
 print('')
 
+print('\nGen data...\n')
 # 获取数据并写入DataFrame
 for f in fileList:
     print(f[-8:-4], end=' ')
-    book    = xlrd.open_workbook(f)
+    try:
+        book = xlrd.open_workbook(dataPath+f)
+    except:
+        print("Error when reading: {}".format(f))
+        continue
     tNames  = book.sheet_names()
     tarName = ''
     for name in tNames:
@@ -64,7 +77,8 @@ for f in fileList:
         if len(areaName) == 0:
             # 空行/数据残缺，跳过
             continue
-        elif areaName in areaNameList:
+        # elif areaName in areaNameList:
+        else:
             print(areaName, end=' ')
             data.loc[count]             = dataDict
             data.loc[count]['Name']     = areaName
