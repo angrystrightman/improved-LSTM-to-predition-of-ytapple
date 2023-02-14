@@ -3,7 +3,16 @@ import xlrd
 import pandas as pd
 import numpy  as np
 
-validData = lambda value: value if type(value) == type(float(1.0)) else 0
+# validData = lambda value: value if type(value) == type(float(1.0)) else 0
+
+def validData(value):
+    if type(value) == type(float(1.0)):
+        return value
+    else:
+        try:
+            return float(eval(str(value).replace(' ','')))
+        except:
+            return 0
 
 saveLoc   = '../data/prodData_YT.csv'  # 设置：存储路径
 dataPath  = '../data/prodRaw/'        # 设置：数据路径
@@ -82,12 +91,15 @@ for f in fileList:
             print(areaName, end=' ')
             data.loc[count]             = dataDict
             data.loc[count]['Name']     = areaName
-            data.loc[count]['Time']     = int(f[-8:-4])
+            data.loc[count]['Time']     = int(f[-8:-4]) - 1
             data.loc[count]['Prod']     = validData(row[3].value)
             data.loc[count]['Area']     = validData(row[10].value)
             data.loc[count]['AverProd'] = data.loc[count]['Prod'] / data.loc[count]['Area'] \
                 if data.loc[count]['Area'] else 0
-            count += 1
+            if data.loc[count]['Area'] == 0:
+                continue
+            else:
+                count += 1
     print('')
 
 data.to_csv(saveLoc, index=False)
